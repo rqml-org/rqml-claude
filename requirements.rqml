@@ -9,9 +9,10 @@
   ISS-PLUGIN-SCOPE) deliberately deferred this harness to a downstream
   integration repository; this is that repository.
 
-  The spec leads the code: at the time of writing, nothing in this repository
-  is implemented. Implementation coverage is intentionally zero (ISS-IMPL-ZERO)
-  and will be recorded with `rqml link` as the plugin is built.
+  The spec led the code: every requirement below was written and approved
+  before the plugin was built, and every implements/verifiedBy edge in the
+  trace section was recorded with `rqml link` as the corresponding piece
+  landed (see ISS-IMPL-ZERO for the history of that baseline).
 -->
 <rqml xmlns="https://rqml.org/schema/2.1.0"
       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -476,7 +477,7 @@
 
     <reqPackage id="PKG-PLUGIN" title="Plugin packaging" ownerRef="STK-MAINTAINER">
       <description>The installable artifact and its distribution.</description>
-      <req id="REQ-MANIFEST" type="CR" title="Conformant plugin manifest" status="draft" priority="must">
+      <req id="REQ-MANIFEST" type="CR" title="Conformant plugin manifest" status="approved" priority="must">
         <statement>
           The repository SHALL be a valid Claude Code plugin: a
           .claude-plugin/plugin.json manifest naming the plugin "rqml", with
@@ -491,14 +492,14 @@
           </criterion>
         </acceptance>
       </req>
-      <req id="REQ-MARKETPLACE" type="DR" title="Self-hosting marketplace" status="draft" priority="should">
+      <req id="REQ-MARKETPLACE" type="DR" title="Self-hosting marketplace" status="approved" priority="should">
         <statement>
           The repository SHALL carry a .claude-plugin/marketplace.json listing
           the plugin, so installation is a single marketplace-add pointing at
           rqml-org/rqml-claude.
         </statement>
       </req>
-      <req id="REQ-THIN-ADAPTER" type="CR" title="No spec logic in the plugin" status="draft" priority="must">
+      <req id="REQ-THIN-ADAPTER" type="CR" title="No spec logic in the plugin" status="approved" priority="must">
         <statement>
           The plugin SHALL NOT reimplement any validation, coverage, drift,
           impact, or extraction logic; every verdict and every artifact view
@@ -516,7 +517,7 @@
           </criterion>
         </acceptance>
       </req>
-      <req id="REQ-DORMANT" type="NFR" title="Dormant outside RQML projects" status="draft" priority="must">
+      <req id="REQ-DORMANT" type="NFR" title="Dormant outside RQML projects" status="approved" priority="must">
         <statement>
           In a project with no .rqml spec document, every hook SHALL return
           immediately after a single existence test, inject nothing, and block
@@ -537,7 +538,7 @@
         The deterministic loop: anchor at start, validate on spec edits, gate
         on stop.
       </description>
-      <req id="REQ-HOOK-ANCHOR" type="FR" title="Session-start anchoring" status="draft" priority="must">
+      <req id="REQ-HOOK-ANCHOR" type="FR" title="Session-start anchoring" status="approved" priority="must">
         <statement>
           On session start in an RQML-governed project, the plugin SHALL run
           rqml status and inject its summary into the agent's context, together
@@ -552,7 +553,7 @@
           </criterion>
         </acceptance>
       </req>
-      <req id="REQ-HOOK-SPEC-VALIDATE" type="FR" title="Immediate spec-edit validation" status="draft" priority="must">
+      <req id="REQ-HOOK-SPEC-VALIDATE" type="FR" title="Immediate spec-edit validation" status="approved" priority="must">
         <statement>
           After any Edit or Write that touches an .rqml document, the plugin
           SHALL run rqml validate on the touched document and return the
@@ -566,7 +567,7 @@
           </criterion>
         </acceptance>
       </req>
-      <req id="REQ-HOOK-STOP-GATE" type="FR" title="Stop gate" status="draft" priority="must">
+      <req id="REQ-HOOK-STOP-GATE" type="FR" title="Stop gate" status="approved" priority="must">
         <statement>
           When the agent attempts to stop in an RQML-governed project, the
           plugin SHALL run rqml check at the project's strictness level and
@@ -577,6 +578,14 @@
           This is the moment enforcement matters: the gate converts "the agent
           should finish the loop" into "the session cannot end until it has."
         </rationale>
+        <notes>
+          Loop protection: when a stop attempt has already been blocked once
+          and continued by this gate (the host signals this via
+          stop_hook_active), a persisting failure SHALL NOT block again; the
+          gate surfaces a final warning and lets the session end, so an
+          unsatisfiable finding can never trap the agent in an infinite
+          block-continue loop.
+        </notes>
         <acceptance>
           <criterion id="CRIT-STOP-BLOCKS">
             <given>A project whose linked implementation has drifted</given>
@@ -590,13 +599,13 @@
           </criterion>
         </acceptance>
       </req>
-      <req id="REQ-HOOK-DIAGNOSTICS" type="UXR" title="Verbatim, reproducible diagnostics" status="draft" priority="must">
+      <req id="REQ-HOOK-DIAGNOSTICS" type="UXR" title="Verbatim, reproducible diagnostics" status="approved" priority="must">
         <statement>
           Every block and every validation feedback SHALL include the CLI
           diagnostics verbatim and the exact command that reproduces them.
         </statement>
       </req>
-      <req id="REQ-HOOK-FAIL-OPEN" type="NFR" title="Fail open" status="draft" priority="must">
+      <req id="REQ-HOOK-FAIL-OPEN" type="NFR" title="Fail open" status="approved" priority="must">
         <statement>
           When the rqml CLI is missing or exits with a usage error (64), the
           plugin SHALL NOT block anything; it SHALL warn at most once per
@@ -614,7 +623,7 @@
 
     <reqPackage id="PKG-COMMANDS" title="Slash commands" ownerRef="STK-TEAMS">
       <description>Explicit entry points for the developer and the agent.</description>
-      <req id="REQ-CMD-INIT" type="FR" title="/rqml:init — adopt RQML" status="draft" priority="must">
+      <req id="REQ-CMD-INIT" type="FR" title="/rqml:init — adopt RQML" status="approved" priority="must">
         <statement>
           The plugin SHALL provide an init command that scaffolds an
           RQML-governed project via rqml init and then guides the agent
@@ -622,13 +631,13 @@
           requirements from the developer.
         </statement>
       </req>
-      <req id="REQ-CMD-STATUS" type="FR" title="/rqml:status — re-anchor" status="draft" priority="must">
+      <req id="REQ-CMD-STATUS" type="FR" title="/rqml:status — re-anchor" status="approved" priority="must">
         <statement>
           The plugin SHALL provide a status command that re-runs the
           session-start anchoring on demand.
         </statement>
       </req>
-      <req id="REQ-CMD-CHECK" type="FR" title="/rqml:check — run the gate" status="draft" priority="must">
+      <req id="REQ-CMD-CHECK" type="FR" title="/rqml:check — run the gate" status="approved" priority="must">
         <statement>
           The plugin SHALL provide a check command that runs the gate on
           demand and has the agent resolve each finding through the loop
@@ -639,7 +648,7 @@
 
     <reqPackage id="PKG-AGENT-TOOLS" title="Agent tooling" ownerRef="STK-MAINTAINER">
       <description>The read/record loop exposed to the agent as structured tools.</description>
-      <req id="REQ-MCP-BUNDLED" type="FR" title="Bundled MCP server" status="draft" priority="must">
+      <req id="REQ-MCP-BUNDLED" type="FR" title="Bundled MCP server" status="approved" priority="must">
         <statement>
           The plugin SHALL register the @rqml/mcp server so the agent has the
           toolchain's tools (validate, status, check, trace, show, impact,
@@ -654,7 +663,7 @@
           </criterion>
         </acceptance>
       </req>
-      <req id="REQ-PATH-DISCIPLINE" type="PR" title="Path inputs over inline XML" status="draft" priority="should">
+      <req id="REQ-PATH-DISCIPLINE" type="PR" title="Path inputs over inline XML" status="approved" priority="should">
         <statement>
           Plugin guidance (commands, injected context, skill) SHALL direct the
           agent to call MCP tools with path inputs rather than inlining
@@ -662,7 +671,7 @@
           rather than hand-editing trace XML.
         </statement>
       </req>
-      <req id="REQ-SKILL-AUTHORING" type="FR" title="Authoring skill" status="draft" priority="should">
+      <req id="REQ-SKILL-AUTHORING" type="FR" title="Authoring skill" status="approved" priority="should">
         <statement>
           The plugin SHOULD bundle an authoring skill — activation cues, tag
           semantics, statement quality guidance derived from rqml-skill — so
@@ -674,7 +683,7 @@
 
     <reqPackage id="PKG-CONFIG" title="Configuration and contracts" ownerRef="STK-MAINTAINER">
       <description>How the plugin stays aligned with the project and the toolchain.</description>
-      <req id="REQ-STRICTNESS-RESPECT" type="PR" title="Respect declared strictness" status="draft" priority="must">
+      <req id="REQ-STRICTNESS-RESPECT" type="PR" title="Respect declared strictness" status="approved" priority="must">
         <statement>
           The plugin SHALL run every gate at the strictness level the project
           declares (the AGENTS.md strictness convention), defaulting to
@@ -688,7 +697,7 @@
           </criterion>
         </acceptance>
       </req>
-      <req id="REQ-CLI-CONTRACT" type="IR" title="Consume only the stable contract" status="draft" priority="must">
+      <req id="REQ-CLI-CONTRACT" type="IR" title="Consume only the stable contract" status="approved" priority="must">
         <statement>
           The plugin SHALL consume only the documented CLI contract — exit
           codes 0, 1, 2, and 64, and the JSON report shapes of status and
@@ -696,7 +705,7 @@
           compatible with.
         </statement>
       </req>
-      <req id="REQ-NO-RESIDUE" type="NFR" title="Clean uninstall" status="draft" priority="should">
+      <req id="REQ-NO-RESIDUE" type="NFR" title="Clean uninstall" status="approved" priority="should">
         <statement>
           Uninstalling the plugin SHALL leave the project untouched: no files
           written outside the plugin's own directories except those the
@@ -998,6 +1007,134 @@
       <from><locator><local id="SM-SESSION"/></locator></from>
       <to><locator><local id="ENT-PLUGIN"/></locator></to>
     </edge>
+    <edge id="E-IMPL-MANIFEST" type="implements">
+      <from><locator><external uri=".claude-plugin/plugin.json" kind="config"/></locator></from>
+      <to><locator><local id="REQ-MANIFEST"/></locator></to>
+    </edge>
+    <edge id="E-IMPL-MARKETPLACE" type="implements">
+      <from><locator><external uri=".claude-plugin/marketplace.json" kind="config"/></locator></from>
+      <to><locator><local id="REQ-MARKETPLACE"/></locator></to>
+    </edge>
+    <edge id="E-IMPL-THIN-ADAPTER" type="implements">
+      <from><locator><external uri="hooks/scripts/lib.mjs" kind="code" title="adapter layer: find spec, find CLI, relay verdicts"/></locator></from>
+      <to><locator><local id="REQ-THIN-ADAPTER"/></locator></to>
+    </edge>
+    <edge id="E-IMPL-DORMANT" type="implements">
+      <from><locator><external uri="hooks/scripts/lib.mjs#findSpec" kind="code"/></locator></from>
+      <to><locator><local id="REQ-DORMANT"/></locator></to>
+    </edge>
+    <edge id="E-IMPL-HOOK-ANCHOR" type="implements">
+      <from><locator><external uri="hooks/scripts/session-start.mjs" kind="code"/></locator></from>
+      <to><locator><local id="REQ-HOOK-ANCHOR"/></locator></to>
+    </edge>
+    <edge id="E-IMPL-HOOK-SPEC-VALIDATE" type="implements">
+      <from><locator><external uri="hooks/scripts/post-spec-edit.mjs" kind="code"/></locator></from>
+      <to><locator><local id="REQ-HOOK-SPEC-VALIDATE"/></locator></to>
+    </edge>
+    <edge id="E-IMPL-HOOK-STOP-GATE" type="implements">
+      <from><locator><external uri="hooks/scripts/stop-gate.mjs" kind="code"/></locator></from>
+      <to><locator><local id="REQ-HOOK-STOP-GATE"/></locator></to>
+    </edge>
+    <edge id="E-IMPL-HOOK-DIAGNOSTICS" type="implements">
+      <from><locator><external uri="hooks/scripts/stop-gate.mjs" kind="code"/></locator></from>
+      <to><locator><local id="REQ-HOOK-DIAGNOSTICS"/></locator></to>
+    </edge>
+    <edge id="E-IMPL-HOOK-FAIL-OPEN" type="implements">
+      <from><locator><external uri="hooks/scripts/lib.mjs#warnOnce" kind="code"/></locator></from>
+      <to><locator><local id="REQ-HOOK-FAIL-OPEN"/></locator></to>
+    </edge>
+    <edge id="E-IMPL-CMD-INIT" type="implements">
+      <from><locator><external uri="commands/init.md" kind="doc"/></locator></from>
+      <to><locator><local id="REQ-CMD-INIT"/></locator></to>
+    </edge>
+    <edge id="E-IMPL-CMD-STATUS" type="implements">
+      <from><locator><external uri="commands/status.md" kind="doc"/></locator></from>
+      <to><locator><local id="REQ-CMD-STATUS"/></locator></to>
+    </edge>
+    <edge id="E-IMPL-CMD-CHECK" type="implements">
+      <from><locator><external uri="commands/check.md" kind="doc"/></locator></from>
+      <to><locator><local id="REQ-CMD-CHECK"/></locator></to>
+    </edge>
+    <edge id="E-IMPL-MCP-BUNDLED" type="implements">
+      <from><locator><external uri=".mcp.json" kind="config"/></locator></from>
+      <to><locator><local id="REQ-MCP-BUNDLED"/></locator></to>
+    </edge>
+    <edge id="E-IMPL-PATH-DISCIPLINE" type="implements">
+      <from><locator><external uri="hooks/scripts/session-start.mjs" kind="code"/></locator></from>
+      <to><locator><local id="REQ-PATH-DISCIPLINE"/></locator></to>
+    </edge>
+    <edge id="E-IMPL-SKILL-AUTHORING" type="implements">
+      <from><locator><external uri="skills/rqml-authoring/SKILL.md" kind="doc"/></locator></from>
+      <to><locator><local id="REQ-SKILL-AUTHORING"/></locator></to>
+    </edge>
+    <edge id="E-IMPL-STRICTNESS-RESPECT" type="implements">
+      <from><locator><external uri="hooks/scripts/lib.mjs#readStrictness" kind="code"/></locator></from>
+      <to><locator><local id="REQ-STRICTNESS-RESPECT"/></locator></to>
+    </edge>
+    <edge id="E-IMPL-CLI-CONTRACT" type="implements">
+      <from><locator><external uri="package.json#rqmlToolchain" kind="config"/></locator></from>
+      <to><locator><local id="REQ-CLI-CONTRACT"/></locator></to>
+    </edge>
+    <edge id="E-IMPL-NO-RESIDUE" type="implements">
+      <from><locator><external uri="hooks/scripts/lib.mjs" kind="code" title="hooks write only a tmpdir warn marker, never into the project"/></locator></from>
+      <to><locator><local id="REQ-NO-RESIDUE"/></locator></to>
+    </edge>
+    <edge id="E-VER-MANIFEST" type="verifiedBy">
+      <from><locator><local id="REQ-MANIFEST"/></locator></from>
+      <to><locator><external uri="test/plugin.test.mjs" kind="test"/></locator></to>
+    </edge>
+    <edge id="E-VER-MARKETPLACE" type="verifiedBy">
+      <from><locator><local id="REQ-MARKETPLACE"/></locator></from>
+      <to><locator><external uri="test/plugin.test.mjs" kind="test"/></locator></to>
+    </edge>
+    <edge id="E-VER-MCP-BUNDLED" type="verifiedBy">
+      <from><locator><local id="REQ-MCP-BUNDLED"/></locator></from>
+      <to><locator><external uri="test/plugin.test.mjs" kind="test"/></locator></to>
+    </edge>
+    <edge id="E-VER-CMD-INIT" type="verifiedBy">
+      <from><locator><local id="REQ-CMD-INIT"/></locator></from>
+      <to><locator><external uri="test/plugin.test.mjs" kind="test"/></locator></to>
+    </edge>
+    <edge id="E-VER-CMD-STATUS" type="verifiedBy">
+      <from><locator><local id="REQ-CMD-STATUS"/></locator></from>
+      <to><locator><external uri="test/plugin.test.mjs" kind="test"/></locator></to>
+    </edge>
+    <edge id="E-VER-CMD-CHECK" type="verifiedBy">
+      <from><locator><local id="REQ-CMD-CHECK"/></locator></from>
+      <to><locator><external uri="test/plugin.test.mjs" kind="test"/></locator></to>
+    </edge>
+    <edge id="E-VER-DORMANT" type="verifiedBy">
+      <from><locator><local id="REQ-DORMANT"/></locator></from>
+      <to><locator><external uri="test/plugin.test.mjs" kind="test"/></locator></to>
+    </edge>
+    <edge id="E-VER-HOOK-ANCHOR" type="verifiedBy">
+      <from><locator><local id="REQ-HOOK-ANCHOR"/></locator></from>
+      <to><locator><external uri="test/plugin.test.mjs" kind="test"/></locator></to>
+    </edge>
+    <edge id="E-VER-HOOK-SPEC-VALIDATE" type="verifiedBy">
+      <from><locator><local id="REQ-HOOK-SPEC-VALIDATE"/></locator></from>
+      <to><locator><external uri="test/plugin.test.mjs" kind="test"/></locator></to>
+    </edge>
+    <edge id="E-VER-HOOK-STOP-GATE" type="verifiedBy">
+      <from><locator><local id="REQ-HOOK-STOP-GATE"/></locator></from>
+      <to><locator><external uri="test/plugin.test.mjs" kind="test"/></locator></to>
+    </edge>
+    <edge id="E-VER-HOOK-DIAGNOSTICS" type="verifiedBy">
+      <from><locator><local id="REQ-HOOK-DIAGNOSTICS"/></locator></from>
+      <to><locator><external uri="test/plugin.test.mjs" kind="test"/></locator></to>
+    </edge>
+    <edge id="E-VER-HOOK-FAIL-OPEN" type="verifiedBy">
+      <from><locator><local id="REQ-HOOK-FAIL-OPEN"/></locator></from>
+      <to><locator><external uri="test/plugin.test.mjs" kind="test"/></locator></to>
+    </edge>
+    <edge id="E-VER-THIN-ADAPTER" type="verifiedBy">
+      <from><locator><local id="REQ-THIN-ADAPTER"/></locator></from>
+      <to><locator><external uri="test/plugin.test.mjs" kind="test" title="TC-PARITY: hook verdict equals CLI verdict"/></locator></to>
+    </edge>
+    <edge id="E-VER-STRICTNESS-RESPECT" type="verifiedBy">
+      <from><locator><local id="REQ-STRICTNESS-RESPECT"/></locator></from>
+      <to><locator><external uri="test/plugin.test.mjs" kind="test"/></locator></to>
+    </edge>
   </trace>
 
   <!-- ============================================================= -->
@@ -1006,10 +1143,12 @@
   <governance>
     <issue id="ISS-IMPL-ZERO" status="review" owner="STK-MAINTAINER">
       <statement>
-        Implementation coverage is intentionally zero: the spec precedes the
-        plugin. implements and verifiedBy edges to real files will be recorded
-        with rqml link as each requirement is built, exactly as was done in
-        the upstream toolchain repository.
+        Resolved in practice: the spec preceded the plugin (drafted and
+        approved 2026-06-10 with implementation coverage at zero), and every
+        implements/verifiedBy edge was then recorded with rqml link as the
+        corresponding artifact landed the same day. The drift baseline
+        (.rqml/baseline.json) is committed so the gate detects changed
+        implementations from here on.
       </statement>
       <notes>Dogfood baseline, mirroring ISS-IMPL-TRACE in RQML-SELF-001.</notes>
     </issue>

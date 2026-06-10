@@ -1,0 +1,13 @@
+{
+  "name": "rqml",
+  "description": "Spec-first development, enforced: deterministic RQML toolchain hooks (anchor, validate, gate), slash commands, and MCP tools for Claude Code.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Garðar Guðgeirsson",
+    "url": "https://github.com/gudgeirsson"
+  },
+  "homepage": "https://rqml.org",
+  "repository": "https://github.com/rqml-org/rqml-claude",
+  "license": "Apache-2.0",
+  "keywords": ["rqml", "requirements", "spec-first", "traceability", "drift"]
+}

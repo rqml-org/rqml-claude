@@ -1,0 +1,17 @@
+{
+  "name": "rqml",
+  "owner": {
+    "name": "rqml.org",
+    "email": "gardar@gmail.com"
+  },
+  "description": "RQML spec-first tooling for Claude Code.",
+  "plugins": [
+    {
+      "name": "rqml",
+      "source": "./",
+      "description": "Spec-first development, enforced — RQML toolchain hooks, commands, and MCP tools.",
+      "category": "development",
+      "keywords": ["rqml", "requirements", "spec-first", "traceability"]
+    }
+  ]
+}

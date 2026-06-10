@@ -12,30 +12,38 @@ The plugin contains no requirements logic of its own. Every verdict comes from
 the `rqml` CLI, so what blocks the agent locally is exactly what blocks CI —
 and no language model participates in any enforcement decision.
 
-## Status: specified, not yet implemented
-
-This project is built spec-first, like everything else in the RQML ecosystem.
-The complete specification lives in [`requirements.rqml`](requirements.rqml) —
-goals, scenarios, requirements with acceptance criteria, the enforcement-session
-state machine, and trace links into the upstream toolchain spec. Implementation
-coverage is intentionally zero until requirements are approved; trace links will
-be recorded with `rqml link` as each piece is built.
+## Install
 
 ```bash
-npx @rqml/cli status     # see for yourself
+# inside Claude Code
+/plugin marketplace add rqml-org/rqml-claude
+/plugin install rqml@rqml
 ```
 
-## What it will look like
+The hooks need the rqml CLI: `npm install -g @rqml/cli`. Without it the plugin
+fails open (warns once, blocks nothing). In projects without an `.rqml` spec it
+is fully dormant.
+
+## What you get
 
 | Surface | Contents |
 |---------|----------|
-| Hooks | SessionStart anchoring · PostToolUse spec validation · Stop gate on `rqml check` |
-| Commands | `/rqml:init` · `/rqml:status` · `/rqml:check` |
+| Hooks | SessionStart anchoring (`rqml status` into context) · PostToolUse validation of every `.rqml` edit · Stop gate that blocks session completion until `rqml check` exits 0 |
+| Commands | `/rqml:init` (adopt RQML) · `/rqml:status` (re-anchor) · `/rqml:check` (drive the gate to green) |
 | MCP | The bundled `@rqml/mcp` server: `rqml_show`, `rqml_impact`, `rqml_link`, … |
-| Skill | RQML authoring guidance (derived from rqml-skill) |
+| Skill | RQML authoring guidance (structure, statement quality, traceability) |
 
-Dormant in projects without an `.rqml` spec; fails open when the toolchain is
-missing. See the spec for the normative version of all of the above.
+The stop gate honors the strictness level declared in `AGENTS.md`, surfaces the
+CLI diagnostics verbatim, and never blocks the same stop twice (loop
+protection). Uninstalling leaves your project untouched.
+
+## Spec-first, naturally
+
+This project is built the way the plugin makes you build: the specification in
+[`requirements.rqml`](requirements.rqml) was written and approved before any
+implementation, every shipped artifact is linked back to its requirement with
+`rqml link`, and the committed drift baseline means `rqml check` fails if the
+implementation changes without the spec. Run `npx @rqml/cli status` here to see.
 
 ## License
 
