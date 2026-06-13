@@ -29,9 +29,10 @@ if (status.status !== 0) process.exit(0); // unreadable spec: validation hook wi
 process.stdout.write(
   `[rqml] This project is RQML-governed (strictness: ${strictness}). The spec is the source of truth.\n\n` +
     `${status.stdout.trim()}\n\n` +
-    "The loop: `rqml show <ID>` to read one requirement (statement, acceptance, traces) · " +
-    "`rqml impact <ID>` before changing an artifact · `rqml link <ID> <path>` after implementing " +
-    "(use `--type verifiedBy` for tests; never hand-edit trace XML) · finish only when `rqml check` exits 0 — " +
-    "the stop gate enforces this. MCP tools (rqml_show, rqml_impact, rqml_link, …) are available; " +
-    "prefer their `path` inputs over inlining documents.\n",
+    "Follow the five-stage RQML process (rqml.org/docs/development-process): " +
+    "**Spec** (specify before coding) · **Design** (`/rqml:design` records significant decisions as ADRs in `.rqml/adr/`) · " +
+    "**Plan** (`/rqml:plan` maintains `.rqml/plan.md`) · **Code** (`rqml show <ID>` to read, `rqml impact <ID>` before changing, " +
+    "implement, then `rqml link <ID> <path>` — `--type verifiedBy` for tests; never hand-edit trace XML) · " +
+    "**Verify** (finish only when `rqml check` exits 0 — the stop gate enforces this). " +
+    "MCP tools (rqml_show, rqml_impact, rqml_link, …) are available; prefer their `path` inputs over inlining documents.\n",
 );
