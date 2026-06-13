@@ -35,7 +35,11 @@ section when it earns its keep, not before.
 - Give every verifiable requirement `<acceptance>` criteria in
   given/when/then form — they are what tests get generated from.
 - Statements answer *what* and *how well*; put *why* in `<rationale>` and
-  design choices in `<decision>` elements, not in the statement.
+  design choices in `<decision>` elements, not in the statement. A significant
+  architectural decision belongs in a full ADR under `.rqml/adr/` (see
+  https://rqml.org/docs/development-process/design); the `<decision>` element is
+  the agent-readable summary, the ADR the long-form context — cross-reference
+  them by id. Use `/rqml:design` to write ADRs.
 
 ## Identity and lifecycle
 

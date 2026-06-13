@@ -103,7 +103,7 @@ test("TC-MANIFEST: plugin.json, marketplace.json, hooks.json, .mcp.json are cons
   assert.equal(mcp.mcpServers.rqml.command, "npx");
   assert.ok(mcp.mcpServers.rqml.args.includes("@rqml/mcp"));
 
-  for (const cmd of ["init.md", "status.md", "check.md"]) {
+  for (const cmd of ["init.md", "status.md", "check.md", "design.md", "plan.md"]) {
     assert.ok(existsSync(join(ROOT, "commands", cmd)), `command exists: ${cmd}`);
   }
   assert.ok(existsSync(join(ROOT, "skills", "rqml-authoring", "SKILL.md")));

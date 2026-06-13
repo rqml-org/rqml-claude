@@ -4,9 +4,14 @@ RQML spec-first enforcement for [Claude Code](https://code.claude.com) — a plu
 that turns the deterministic primitives of the [RQML toolchain](https://rqml.org)
 into an enforced development loop:
 
-- **Anchor** — every session starts with `rqml status` injected into context
+- **Anchor** — every session starts with `rqml status` injected into context,
+  along with the [five-stage RQML process](https://rqml.org/docs/development-process)
 - **Validate** — spec edits get `rqml validate` diagnostics in the same turn
 - **Gate** — the session cannot end until `rqml check` exits 0
+
+Commands walk the agent through the process: `/rqml:design` records significant
+architectural decisions as ADRs in `.rqml/adr/`, and `/rqml:plan` maintains the
+staged implementation plan in `.rqml/plan.md`.
 
 The plugin contains no requirements logic of its own. Every verdict comes from
 the `rqml` CLI, so what blocks the agent locally is exactly what blocks CI —
@@ -29,7 +34,7 @@ is fully dormant.
 | Surface | Contents |
 |---------|----------|
 | Hooks | SessionStart anchoring (`rqml status` into context) · PostToolUse validation of every `.rqml` edit · Stop gate that blocks session completion until `rqml check` exits 0 |
-| Commands | `/rqml:init` (adopt RQML) · `/rqml:status` (re-anchor) · `/rqml:check` (drive the gate to green) |
+| Commands | `/rqml:init` (adopt RQML) · `/rqml:status` (re-anchor) · `/rqml:design` (record an ADR) · `/rqml:plan` (draft `.rqml/plan.md`) · `/rqml:check` (drive the gate to green) |
 | MCP | The bundled `@rqml/mcp` server: `rqml_show`, `rqml_impact`, `rqml_link`, … |
 | Skill | RQML authoring guidance (structure, statement quality, traceability) |
 
