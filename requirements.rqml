@@ -620,6 +620,31 @@
           </criterion>
         </acceptance>
       </req>
+      <req id="REQ-HOOK-PREIMPL" type="FR" title="Pre-implementation approval gate" status="draft" priority="should">
+        <statement>
+          The plugin SHALL provide a PreToolUse hook that, before an edit to a
+          code artifact already linked by an implements edge to a requirement,
+          consults the toolchain's approval-gate verdict and denies the edit
+          when that requirement is not approved — failing open if the toolchain
+          is unavailable, so the agent is never blocked by a missing or hung
+          toolchain.
+        </statement>
+        <rationale>
+          The stop gate blocks only at session end, after code is written;
+          enforcing approval-before-implementation needs a checkpoint at the
+          moment of the edit (ADR-0008). The verdict is the toolchain's
+          deterministic result, not the model's (GOAL-ENFORCED-LOOP); fail-open
+          matches the plugin's existing hook contract. Net-new, not-yet-linked
+          code remains governed by the stop gate.
+        </rationale>
+        <acceptance>
+          <criterion id="CRIT-PREIMPL-DENY">
+            <given>An agent edit to code linked by an implements edge to a draft requirement</given>
+            <when>The PreToolUse hook runs</when>
+            <then>The edit is denied with a message naming the requirement; and when the toolchain is unavailable, the edit proceeds with at most one warning.</then>
+          </criterion>
+        </acceptance>
+      </req>
     </reqPackage>
 
     <reqPackage id="PKG-COMMANDS" title="Slash commands" ownerRef="STK-TEAMS">
@@ -672,6 +697,30 @@
             <given>A project with approved requirements</given>
             <when>The developer runs /rqml:plan</when>
             <then>.rqml/plan.md is created or updated with per-stage goals, requirement ids, and verification steps.</then>
+          </criterion>
+        </acceptance>
+      </req>
+      <req id="REQ-CMD-REVIEW" type="FR" title="/rqml:review — accept requirements" status="draft" priority="should">
+        <statement>
+          The plugin SHALL provide a review command that renders the draft and
+          review requirements as an overview and a traceability matrix,
+          presents them to the developer for acceptance, and on confirmation
+          transitions each accepted requirement to approved via the toolchain's
+          approve operation.
+        </statement>
+        <rationale>
+          Adoption already gates on the developer approving requirements by
+          hand (REQ-CMD-INIT); a review command makes acceptance an explicit,
+          repeatable checkpoint for new requirements mid-project, using the
+          toolchain's deterministic surfaces (overview, matrix, approve) rather
+          than manual XML edits. The human decides; the toolchain performs the
+          edit.
+        </rationale>
+        <acceptance>
+          <criterion id="CRIT-REVIEW-ACCEPT">
+            <given>A project with draft requirements</given>
+            <when>The developer runs the review command and confirms a requirement</when>
+            <then>That requirement's status becomes approved and the others are unchanged.</then>
           </criterion>
         </acceptance>
       </req>
@@ -1197,6 +1246,16 @@
     <edge id="E-VER-CMD-PLAN" type="verifiedBy">
       <from><locator><local id="REQ-CMD-PLAN"/></locator></from>
       <to><locator><external uri="test/plugin.test.mjs" kind="test"/></locator></to>
+    </edge>
+
+    <!-- Interactive review/accept (capability 3) -->
+    <edge id="E-PREIMPL-LOOP" type="satisfies" confidence="0.85">
+      <from><locator><local id="REQ-HOOK-PREIMPL"/></locator></from>
+      <to><locator><local id="GOAL-ENFORCED-LOOP"/></locator></to>
+    </edge>
+    <edge id="E-REVIEW-LOOP" type="satisfies" confidence="0.85">
+      <from><locator><local id="REQ-CMD-REVIEW"/></locator></from>
+      <to><locator><local id="GOAL-ENFORCED-LOOP"/></locator></to>
     </edge>
   </trace>
 
