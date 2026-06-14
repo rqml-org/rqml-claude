@@ -87,7 +87,12 @@ test("TC-MANIFEST: plugin.json, marketplace.json, hooks.json, .mcp.json are cons
   assert.ok(marketplace.owner.name);
 
   const hooks = JSON.parse(readFileSync(join(ROOT, "hooks", "hooks.json"), "utf8")).hooks;
-  assert.deepEqual(Object.keys(hooks).sort(), ["PostToolUse", "SessionStart", "Stop"]);
+  assert.deepEqual(Object.keys(hooks).sort(), [
+    "PostToolUse",
+    "PreToolUse",
+    "SessionStart",
+    "Stop",
+  ]);
   for (const event of Object.values(hooks)) {
     for (const binding of event) {
       for (const hook of binding.hooks) {
@@ -103,7 +108,7 @@ test("TC-MANIFEST: plugin.json, marketplace.json, hooks.json, .mcp.json are cons
   assert.equal(mcp.mcpServers.rqml.command, "npx");
   assert.ok(mcp.mcpServers.rqml.args.includes("@rqml/mcp"));
 
-  for (const cmd of ["init.md", "status.md", "check.md", "design.md", "plan.md"]) {
+  for (const cmd of ["init.md", "status.md", "check.md", "design.md", "plan.md", "review.md"]) {
     assert.ok(existsSync(join(ROOT, "commands", cmd)), `command exists: ${cmd}`);
   }
   assert.ok(existsSync(join(ROOT, "skills", "rqml-authoring", "SKILL.md")));
@@ -140,6 +145,54 @@ test("TC-DORMANT: all hooks silent without a spec (a .rqml directory does not co
     const edit = runHook("post-spec-edit.mjs", session(dir, { tool_input: { file_path: join(dir, "a.ts") } }));
     assert.equal(edit.status, 0);
     assert.equal(edit.stderr.trim(), "");
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+// ---------------------------------------------------------------------------
+// TC-PREIMPL — code linked to a non-approved requirement is gated before edit.
+// ---------------------------------------------------------------------------
+test("TC-PREIMPL: editing code that implements a non-approved requirement is denied", { skip: !CLI }, () => {
+  const dir = governedProject();
+  try {
+    const specPath = join(dir, "requirements.rqml");
+    let spec = readFileSync(specPath, "utf8");
+    spec = spec.replace(
+      "  </requirements>",
+      '    <req id="REQ-B" type="FR" title="b" status="draft"><statement>The system SHALL b.</statement></req>\n  </requirements>',
+    );
+    spec = spec.replace(
+      "  </trace>",
+      '    <edge id="E-IMPL-B" type="implements"><from><locator><external uri="src/a.ts" kind="code"/></locator></from><to><locator><local id="REQ-B"/></locator></to></edge>\n  </trace>',
+    );
+    writeFileSync(specPath, spec);
+
+    // Editing src/a.ts (linked to draft REQ-B) is denied.
+    const denied = runHook(
+      "pre-impl-gate.mjs",
+      session(dir, { tool_input: { file_path: join(dir, "src", "a.ts") } }),
+    );
+    assert.equal(denied.status, 0);
+    const decision = JSON.parse(denied.stdout);
+    assert.equal(decision.hookSpecificOutput.permissionDecision, "deny");
+    assert.match(decision.hookSpecificOutput.permissionDecisionReason, /REQ-B/);
+
+    // An unlinked file is allowed (silent) — net-new code is governed by the Stop gate.
+    const allowed = runHook(
+      "pre-impl-gate.mjs",
+      session(dir, { tool_input: { file_path: join(dir, "src", "new.ts") } }),
+    );
+    assert.equal(allowed.status, 0);
+    assert.equal(allowed.stdout.trim(), "");
+
+    // A spec edit is never gated.
+    const specEdit = runHook(
+      "pre-impl-gate.mjs",
+      session(dir, { tool_input: { file_path: specPath } }),
+    );
+    assert.equal(specEdit.status, 0);
+    assert.equal(specEdit.stdout.trim(), "");
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
