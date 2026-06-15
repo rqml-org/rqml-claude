@@ -9,7 +9,7 @@
     "test": "node --test \"test/**/*.test.mjs\""
   },
   "rqmlToolchain": {
-    "compatible": "@rqml/cli >=0.1.1 <0.3.0",
+    "compatible": "@rqml/cli >=0.5.0",
     "contract": "exit codes 0/1/2/64; status/check --json report shapes"
   }
 }

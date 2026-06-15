@@ -620,7 +620,7 @@
           </criterion>
         </acceptance>
       </req>
-      <req id="REQ-HOOK-PREIMPL" type="FR" title="Pre-implementation approval gate" status="draft" priority="should">
+      <req id="REQ-HOOK-PREIMPL" type="FR" title="Pre-implementation approval gate" status="approved" priority="should">
         <statement>
           The plugin SHALL provide a PreToolUse hook that, before an edit to a
           code artifact already linked by an implements edge to a requirement,
@@ -700,7 +700,7 @@
           </criterion>
         </acceptance>
       </req>
-      <req id="REQ-CMD-REVIEW" type="FR" title="/rqml:review — accept requirements" status="draft" priority="should">
+      <req id="REQ-CMD-REVIEW" type="FR" title="/rqml:review — accept requirements" status="approved" priority="should">
         <statement>
           The plugin SHALL provide a review command that renders the draft and
           review requirements as an overview and a traceability matrix,
@@ -1256,6 +1256,22 @@
     <edge id="E-REVIEW-LOOP" type="satisfies" confidence="0.85">
       <from><locator><local id="REQ-CMD-REVIEW"/></locator></from>
       <to><locator><local id="GOAL-ENFORCED-LOOP"/></locator></to>
+    </edge>
+    <edge id="E-IMPL-HOOK-PREIMPL" type="implements">
+      <from><locator><external uri="hooks/scripts/pre-impl-gate.mjs" kind="code"/></locator></from>
+      <to><locator><local id="REQ-HOOK-PREIMPL"/></locator></to>
+    </edge>
+    <edge id="E-VER-HOOK-PREIMPL" type="verifiedBy">
+      <from><locator><local id="REQ-HOOK-PREIMPL"/></locator></from>
+      <to><locator><external uri="test/plugin.test.mjs" kind="test"/></locator></to>
+    </edge>
+    <edge id="E-IMPL-CMD-REVIEW" type="implements">
+      <from><locator><external uri="commands/review.md" kind="code"/></locator></from>
+      <to><locator><local id="REQ-CMD-REVIEW"/></locator></to>
+    </edge>
+    <edge id="E-VER-CMD-REVIEW" type="verifiedBy">
+      <from><locator><local id="REQ-CMD-REVIEW"/></locator></from>
+      <to><locator><external uri="test/plugin.test.mjs" kind="test"/></locator></to>
     </edge>
   </trace>
 

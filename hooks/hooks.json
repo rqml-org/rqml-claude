@@ -12,6 +12,19 @@
         ]
       }
     ],
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/pre-impl-gate.mjs\"",
+            "timeout": 15,
+            "statusMessage": "Checking the approval gate"
+          }
+        ]
+      }
+    ],
     "PostToolUse": [
       {
         "matcher": "Edit|Write",
