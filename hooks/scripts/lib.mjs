@@ -113,6 +113,29 @@ export function readStrictness(cwd) {
 }
 
 /**
+ * The package specs beneath `cwd` when no single spec governs it — i.e. a
+ * workspace root (REQ-WORKSPACE-FANOUT). Discovery is delegated to the CLI's
+ * `status --workspace --json` so the plugin never reimplements enumeration.
+ * Returns { units, ambiguous } (each possibly empty) or null when the CLI is
+ * unavailable or its output is unparseable — callers fail open (stay silent so
+ * an ungoverned directory is not nagged).
+ */
+export function discoverWorkspace(cli, cwd, strictness) {
+  const res = runCli(cli, ["status", "--workspace", "--strictness", strictness, "--json"], cwd);
+  if (res.status === null) return null; // hung/unspawnable
+  try {
+    const report = JSON.parse(res.stdout);
+    if (!report || !Array.isArray(report.units)) return null;
+    return {
+      units: report.units,
+      ambiguous: Array.isArray(report.ambiguous) ? report.ambiguous : [],
+    };
+  } catch {
+    return null; // not JSON (e.g. a usage error printed to stderr)
+  }
+}
+
+/**
  * Run the rqml CLI (BR-EXIT-CONTRACT). Returns { status, stdout, stderr };
  * a hung or unspawnable CLI resolves to status null, which callers treat as
  * fail-open.

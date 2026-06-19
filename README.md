@@ -17,6 +17,17 @@ The plugin contains no requirements logic of its own. Every verdict comes from
 the `rqml` CLI, so what blocks the agent locally is exactly what blocks CI —
 and no language model participates in any enforcement decision.
 
+**Enforcement boundary.** The PreToolUse approval gate is a best-effort
+guardrail for fast feedback, not a complete boundary: it fires only for the
+`Edit`, `Write`, and `MultiEdit` tools, so a write that does not go through one
+of those — a Bash redirect (`> file`, `tee`, `sed -i`), `NotebookEdit`, or an
+MCP file writer — is not seen by it, and even when it fires it only blocks edits
+to code already linked to a non-approved requirement. The whole-spec boundary is
+the Stop gate, which re-runs `rqml check` against the on-disk state at turn end
+no matter how a file changed — backed by CI running the same check outside the
+session. Because the Stop gate itself fails open when the CLI is missing, CI is
+the unconditional backstop.
+
 ## Install
 
 ```bash
@@ -28,7 +39,10 @@ and no language model participates in any enforcement decision.
 The hooks need the rqml CLI: `npm install -g @rqml/cli`. Without it the plugin
 fails open (warns once, blocks nothing). In projects without an `.rqml` spec it
 is fully dormant. In a monorepo it activates per the **nearest enclosing** spec —
-a session in a subdirectory is governed by that project's `requirements.rqml`
+a session in a subdirectory is governed by that project's `requirements.rqml`;
+at a workspace root with no spec of its own but package specs beneath it,
+SessionStart surfaces those specs and the stop gate runs `rqml check --workspace`
+across them all
 (see [`skills/rqml-authoring/monorepo.md`](skills/rqml-authoring/monorepo.md)).
 
 ## What you get
