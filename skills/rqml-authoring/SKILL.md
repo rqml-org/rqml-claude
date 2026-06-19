@@ -5,61 +5,29 @@ description: Authoring and editing RQML requirements documents (.rqml) — struc
 
 # RQML Authoring
 
-RQML (https://rqml.org) is an XML format for software requirements. An `.rqml`
-document has up to eleven sections in fixed order — meta, catalogs, domain,
-goals, scenarios, requirements, behavior, interfaces, verification, trace,
-governance — of which only **meta** and **requirements** are mandatory. Add a
-section when it earns its keep, not before.
+Authoring and editing RQML requirements documents (`.rqml`) in an RQML-governed
+project. The **full authoring craft** — document structure, statement quality,
+identity & lifecycle, and traceability — is in **[`authoring.md`](authoring.md)**
+in this skill directory: the canonical guide, vendored from
+[rqml-skill](https://github.com/rqml-org/rqml-skill). Read it for depth, and do
+not edit it here — it is kept current by the upstream craft-sync.
 
 ## Non-negotiables
 
-- **Validate after every edit**: `rqml validate` (XSD + referential integrity).
-  Never leave the document invalid between turns.
-- **Never hand-edit trace edges** for implementation or verification links —
-  `rqml link <REQ-ID> <path>` (and `--type verifiedBy` for tests) writes a
-  correct edge and records the drift baseline.
-- **Never invent element shapes** — `rqml skeleton <req|edge|testCase|stateMachine>`
-  emits schema-valid snippets to fill in.
-- **Read before you write**: `rqml show <ID>` for one artifact with its trace
-  neighborhood; `rqml impact <ID>` before changing anything that exists.
+- **Validate after every edit**: `rqml validate` — never leave the spec invalid.
+- **Never hand-edit trace edges** — record links with `rqml link` / `rqml_link`
+  (and `--type verifiedBy` for tests).
+- **Never invent element shapes** — `rqml skeleton <req|edge|testCase|stateMachine>`.
+- **Read before you write** — `rqml show <ID>`, `rqml impact <ID>`.
+- **Finish only when `rqml check` passes** — the Stop gate enforces it.
 
-## Statement quality
+## In Claude Code
 
-- One atomic, testable obligation per `<req>`; split compound statements.
-- RFC 2119 keywords carry the obligation: SHALL/MUST (binding), SHOULD
-  (default expectation), MAY (genuinely optional). Priority attribute matches:
-  must / should / may.
-- Classify with `type`: FR (functional), NFR (quality), IR (interface),
-  DR (data/structure), SR (security), CR (compliance/constraint), PR (process),
-  UXR (usability), OR (operational).
-- Give every verifiable requirement `<acceptance>` criteria in
-  given/when/then form — they are what tests get generated from.
-- Statements answer *what* and *how well*; put *why* in `<rationale>` and
-  design choices in `<decision>` elements, not in the statement. A significant
-  architectural decision belongs in a full ADR under `.rqml/adr/` (see
-  https://rqml.org/docs/development-process/design); the `<decision>` element is
-  the agent-readable summary, the ADR the long-form context — cross-reference
-  them by id. Use `/rqml:design` to write ADRs.
+- The `rqml_*` MCP tools are available; prefer their `path` inputs over inlining
+  documents.
+- Slash commands run the five-stage process: `/rqml:init` (adopt RQML),
+  `/rqml:status` (re-anchor), `/rqml:design` (record an ADR), `/rqml:plan`
+  (draft the plan), `/rqml:review` (approve requirements), `/rqml:check` (run the
+  gate).
 
-## Identity and lifecycle
-
-- IDs match `[A-Za-z][A-Za-z0-9._-]*` (2–80 chars), unique across the whole
-  document. Conventions: REQ-*, GOAL-*/QGOAL-*, ENT-*, SM-*/ST-*/TR-*, TC-*,
-  DEC-*, RISK-*/OBS-*, E-* for trace edges, CRIT-* for criteria.
-- Lifecycle: draft → review → approved → deprecated. **Only approved
-  requirements drive implementation**; new requirements you draft are
-  `status="draft"` until the developer approves them.
-
-## Traceability
-
-- Every requirement should `satisfies` a goal or scenario (otherwise it is an
-  orphan — the coverage report will say so).
-- `implements` edges run code → requirement; `verifiedBy` runs requirement →
-  test. Record both with `rqml link`, never manually.
-- Cross-document references use doc locators; external artifacts use external
-  locators with a URI.
-
-## Finishing
-
-A spec-editing task is done when `rqml validate` is clean and `rqml check`
-exits 0 at the project's strictness. The stop gate enforces the same thing.
+Full craft: [`authoring.md`](authoring.md) · Canonical docs: https://rqml.org/docs/
