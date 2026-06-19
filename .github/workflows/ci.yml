@@ -22,4 +22,4 @@ jobs:
         with:
           node-version: "20"
       - name: Run tests
-        run: node --test "test/**/*.test.mjs"
+        run: npm test
