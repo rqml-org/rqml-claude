@@ -346,3 +346,158 @@ test("REQ-DISCOVERY: findSpec returns null with no spec in cwd or any parent", (
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+// Nearest-enclosing precedence: a nested package spec governs its own subtree
+// even when an ancestor also holds a spec (the closer one wins).
+test("REQ-DISCOVERY: a nested package spec wins over the repository-root spec", () => {
+  const root = mkdtempSync(join(tmpdir(), "rqml-claude-nested-"));
+  try {
+    mkdirSync(join(root, ".git")); // bound the upward walk at the repo root
+    writeFileSync(join(root, "requirements.rqml"), "<rqml/>");
+    const pkg = join(root, "packages", "a");
+    const pkgSrc = join(pkg, "src");
+    mkdirSync(pkgSrc, { recursive: true });
+    writeFileSync(join(pkg, "requirements.rqml"), "<rqml/>");
+
+    // cwd under packages/a resolves to packages/a's spec, not the root's.
+    assert.equal(findSpec(pkgSrc), join(pkg, "requirements.rqml"));
+    assert.equal(findSpec(pkg), join(pkg, "requirements.rqml"));
+    // A location with no nearer spec still resolves to the root spec.
+    assert.equal(findSpec(root), join(root, "requirements.rqml"));
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+// The repository boundary stops the walk: a spec above a .git marker does not
+// govern a session inside the repo (no escaping into a parent repo/workspace).
+test("REQ-DISCOVERY: a .git directory bounds the walk and shadows an outer spec", () => {
+  const outer = mkdtempSync(join(tmpdir(), "rqml-claude-bound-"));
+  try {
+    writeFileSync(join(outer, "requirements.rqml"), "<rqml/>"); // outside the repo
+    const repo = join(outer, "repo");
+    const sub = join(repo, "src");
+    mkdirSync(sub, { recursive: true });
+    mkdirSync(join(repo, ".git")); // repo boundary, no spec inside the repo
+
+    assert.equal(findSpec(sub), null);
+    assert.equal(findSpec(repo), null);
+  } finally {
+    rmSync(outer, { recursive: true, force: true });
+  }
+});
+
+// A .git FILE (git worktrees and submodules use a file, not a directory) is an
+// equally valid boundary marker — existsSync treats both alike.
+test("REQ-DISCOVERY: a .git file bounds the walk like a .git directory", () => {
+  const outer = mkdtempSync(join(tmpdir(), "rqml-claude-worktree-"));
+  try {
+    writeFileSync(join(outer, "requirements.rqml"), "<rqml/>"); // outside the worktree
+    const repo = join(outer, "wt");
+    const sub = join(repo, "src");
+    mkdirSync(sub, { recursive: true });
+    writeFileSync(join(repo, ".git"), "gitdir: /elsewhere/.git/worktrees/wt\n");
+
+    assert.equal(findSpec(sub), null);
+    assert.equal(findSpec(repo), null);
+  } finally {
+    rmSync(outer, { recursive: true, force: true });
+  }
+});
+
+// A directory holding a single non-requirements.rqml spec resolves to that file.
+test("REQ-DISCOVERY: a sole non-requirements.rqml spec is the governing spec", () => {
+  const root = mkdtempSync(join(tmpdir(), "rqml-claude-sole-"));
+  try {
+    writeFileSync(join(root, "product.rqml"), "<rqml/>");
+    const sub = join(root, "src");
+    mkdirSync(sub, { recursive: true });
+
+    assert.equal(findSpec(root), join(root, "product.rqml"));
+    assert.equal(findSpec(sub), join(root, "product.rqml"));
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+// ---------------------------------------------------------------------------
+// REQ-WORKSPACE-FANOUT — a spec-less root holding package specs is a workspace,
+// not dormant: session start surfaces the units and the stop gate fans out to
+// `rqml check --workspace`.
+// ---------------------------------------------------------------------------
+/** A repo root with no governing spec of its own but two package specs beneath. */
+function workspaceProject({ breakB = false } = {}) {
+  const dir = mkdtempSync(join(tmpdir(), "rqml-claude-ws-"));
+  mkdirSync(join(dir, ".git")); // repo boundary; the root itself has no spec
+  mkdirSync(join(dir, "packages", "a"), { recursive: true });
+  mkdirSync(join(dir, "packages", "b"), { recursive: true });
+  writeFileSync(join(dir, "packages", "a", "requirements.rqml"), SPEC.replace("FIXTURE-1", "PKG-A"));
+  const specB = SPEC.replace("FIXTURE-1", "PKG-B");
+  // A duplicate id makes PKG-B fail integrity, so the workspace check blocks.
+  writeFileSync(
+    join(dir, "packages", "b", "requirements.rqml"),
+    breakB ? specB.replace('<goal id="G1"', '<goal id="REQ-A"') : specB,
+  );
+  return dir;
+}
+
+test("REQ-WORKSPACE: session start surfaces package specs at a spec-less root", { skip: !CLI }, () => {
+  const dir = workspaceProject();
+  try {
+    assert.equal(findSpec(dir), null); // the root itself has no governing spec
+    const r = runHook("session-start.mjs", session(dir));
+    assert.equal(r.status, 0);
+    assert.match(r.stdout, /workspace/i);
+    assert.match(r.stdout, /PKG-A/);
+    assert.match(r.stdout, /PKG-B/);
+    assert.match(r.stdout, /rqml check --workspace/);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("REQ-WORKSPACE: stop gate passes when every package spec passes", { skip: !CLI }, () => {
+  const dir = workspaceProject();
+  try {
+    const r = runHook("stop-gate.mjs", session(dir));
+    assert.equal(r.status, 0);
+    assert.equal(r.stdout.trim(), "");
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("REQ-WORKSPACE: stop gate blocks when a package spec fails", { skip: !CLI }, () => {
+  const dir = workspaceProject({ breakB: true });
+  try {
+    const r = runHook("stop-gate.mjs", session(dir));
+    assert.equal(r.status, 0);
+    const out = JSON.parse(r.stdout);
+    assert.equal(out.decision, "block");
+    assert.match(out.reason, /workspace check gate failed/i);
+    assert.match(out.reason, /--workspace/);
+
+    // Loop protection: a stop already continued once is not blocked again.
+    const again = runHook("stop-gate.mjs", session(dir, { stop_hook_active: true }));
+    assert.equal(again.status, 0);
+    const out2 = JSON.parse(again.stdout);
+    assert.equal(out2.decision, undefined);
+    assert.match(out2.systemMessage, /still fails/);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("REQ-WORKSPACE: a truly ungoverned root with no specs beneath stays dormant", { skip: !CLI }, () => {
+  const dir = ungovernedProject(); // only a .rqml directory, no package specs
+  try {
+    const ss = runHook("session-start.mjs", session(dir));
+    assert.equal(ss.status, 0);
+    assert.equal(ss.stdout.trim(), "");
+    const stop = runHook("stop-gate.mjs", session(dir));
+    assert.equal(stop.status, 0);
+    assert.equal(stop.stdout.trim(), "");
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
