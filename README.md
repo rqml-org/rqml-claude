@@ -27,7 +27,9 @@ and no language model participates in any enforcement decision.
 
 The hooks need the rqml CLI: `npm install -g @rqml/cli`. Without it the plugin
 fails open (warns once, blocks nothing). In projects without an `.rqml` spec it
-is fully dormant.
+is fully dormant. In a monorepo it activates per the **nearest enclosing** spec —
+a session in a subdirectory is governed by that project's `requirements.rqml`
+(see [`skills/rqml-authoring/monorepo.md`](skills/rqml-authoring/monorepo.md)).
 
 ## What you get
 
@@ -36,7 +38,7 @@ is fully dormant.
 | Hooks | SessionStart anchoring (`rqml status` into context) · PreToolUse approval gate that denies edits to code implementing a non-approved requirement · PostToolUse validation of every `.rqml` edit · Stop gate that blocks session completion until `rqml check` exits 0 |
 | Commands | `/rqml:init` (adopt RQML) · `/rqml:status` (re-anchor) · `/rqml:design` (record an ADR) · `/rqml:plan` (draft `.rqml/plan.md`) · `/rqml:review` (accept requirements before implementation) · `/rqml:check` (drive the gate to green) |
 | MCP | The bundled `@rqml/mcp` server: `rqml_show`, `rqml_impact`, `rqml_link`, … |
-| Skill | RQML authoring guidance (structure, statement quality, traceability) |
+| Skill | RQML authoring guidance (structure, statement quality, traceability) + the monorepo spec-scope model |
 
 The stop gate honors the strictness level declared in `AGENTS.md`, surfaces the
 CLI diagnostics verbatim, and never blocks the same stop twice (loop

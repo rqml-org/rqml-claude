@@ -12,6 +12,10 @@ in this skill directory: the canonical guide, vendored from
 [rqml-skill](https://github.com/rqml-org/rqml-skill). Read it for depth, and do
 not edit it here — it is kept current by the upstream craft-sync.
 
+In a monorepo, the spec that governs a file is the **nearest enclosing**
+`requirements.rqml` — its own directory, then each parent directory. See
+**[`monorepo.md`](monorepo.md)** for the scope and discovery rules.
+
 ## Non-negotiables
 
 - **Validate after every edit**: `rqml validate` — never leave the spec invalid.
@@ -30,4 +34,4 @@ not edit it here — it is kept current by the upstream craft-sync.
   (draft the plan), `/rqml:review` (approve requirements), `/rqml:check` (run the
   gate).
 
-Full craft: [`authoring.md`](authoring.md) · Canonical docs: https://rqml.org/docs/
+Full craft: [`authoring.md`](authoring.md) · Monorepo scope: [`monorepo.md`](monorepo.md) · Canonical docs: https://rqml.org/docs/

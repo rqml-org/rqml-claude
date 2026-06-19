@@ -11,6 +11,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import assert from "node:assert/strict";
 import test from "node:test";
+import { findSpec } from "../hooks/scripts/lib.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const SCRIPTS = join(ROOT, "hooks", "scripts");
@@ -311,6 +312,36 @@ test("TC-PARITY: stop gate agrees with a bare rqml check", { skip: !CLI }, () =>
     const hook2 = runHook("stop-gate.mjs", session(dir));
     assert.equal(hook2.stdout.includes('"decision":"block"'), direct2.status !== 0);
     assert.equal(direct2.status, 2);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+// ---------------------------------------------------------------------------
+// REQ-DISCOVERY — the governing spec is the nearest enclosing one, found by
+// checking cwd then each parent directory (not cwd-only). A subdirectory of a
+// governed project is therefore governed, not dormant.
+// ---------------------------------------------------------------------------
+test("REQ-DISCOVERY: findSpec resolves the governing spec from a subdirectory", () => {
+  const dir = governedProject(); // requirements.rqml at the project root, plus src/
+  try {
+    assert.equal(findSpec(dir), join(dir, "requirements.rqml"));
+    assert.equal(findSpec(join(dir, "src")), join(dir, "requirements.rqml"));
+    const deep = join(dir, "src", "a", "b");
+    mkdirSync(deep, { recursive: true });
+    assert.equal(findSpec(deep), join(dir, "requirements.rqml"));
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("REQ-DISCOVERY: findSpec returns null with no spec in cwd or any parent", () => {
+  const dir = ungovernedProject(); // a .rqml directory is not a spec
+  try {
+    assert.equal(findSpec(dir), null);
+    const sub = join(dir, "pkg", "src");
+    mkdirSync(sub, { recursive: true });
+    assert.equal(findSpec(sub), null);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

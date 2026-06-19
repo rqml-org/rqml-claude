@@ -6,7 +6,7 @@
 import { spawnSync } from "node:child_process";
 import { accessSync, constants, existsSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { delimiter, join } from "node:path";
+import { delimiter, dirname, join } from "node:path";
 
 /** Read and parse the hook payload Claude Code passes on stdin. */
 export function readPayload() {
@@ -18,14 +18,32 @@ export function readPayload() {
 }
 
 /**
- * The project marker (REQ-DORMANT, ENT-MARKER): the lone *.rqml FILE in the
- * project root, preferring requirements.rqml. Directories whose name ends in
- * ".rqml" (the .rqml/ governance folder) are not specs.
+ * The governing spec for a working directory (REQ-DISCOVERY, ENT-MARKER): the
+ * nearest *.rqml FILE found by checking `cwd`, then each parent directory, up to
+ * the repository root — preferring requirements.rqml where a directory has more
+ * than one. A directory whose name ends in ".rqml" (the .rqml/ governance
+ * folder) is not a spec. Returns null when no governing spec exists in `cwd` or
+ * any parent directory (REQ-DORMANT) — so a session in a subdirectory of a
+ * governed project finds that project's spec rather than going dormant.
  */
 export function findSpec(cwd) {
+  let dir = cwd;
+  while (true) {
+    const spec = specInDir(dir);
+    if (spec !== null) return spec;
+    // Stop at the repository root rather than escaping into a parent repo.
+    if (existsSync(join(dir, ".git"))) return null;
+    const parent = dirname(dir);
+    if (parent === dir) return null; // filesystem root
+    dir = parent;
+  }
+}
+
+/** The preferred *.rqml FILE directly in `dir`, or null (no walk). */
+function specInDir(dir) {
   let entries;
   try {
-    entries = readdirSync(cwd, { withFileTypes: true });
+    entries = readdirSync(dir, { withFileTypes: true });
   } catch {
     return null;
   }
@@ -35,7 +53,7 @@ export function findSpec(cwd) {
     .sort();
   if (specs.length === 0) return null;
   const preferred = specs.includes("requirements.rqml") ? "requirements.rqml" : specs[0];
-  return join(cwd, preferred);
+  return join(dir, preferred);
 }
 
 /**
@@ -70,16 +88,26 @@ function isExecutable(path) {
 }
 
 /**
- * The project's declared strictness (REQ-STRICTNESS-RESPECT): the AGENTS.md
- * convention `## Strictness: \`level\``, defaulting to standard.
+ * The governing project's declared strictness (REQ-STRICTNESS-RESPECT): the
+ * `## Strictness: \`level\`` convention in the nearest AGENTS.md found by
+ * checking `cwd` then each parent directory up to the repository root — so a
+ * session in a subdirectory still reads the project's declaration. Defaults to
+ * standard when none is declared.
  */
 export function readStrictness(cwd) {
-  try {
-    const agents = readFileSync(join(cwd, "AGENTS.md"), "utf8");
-    const m = agents.match(/^#{1,3}\s*Strictness:\s*`?(relaxed|standard|strict|certified)`?\s*$/m);
-    if (m) return m[1];
-  } catch {
-    /* no AGENTS.md — default */
+  let dir = cwd;
+  while (true) {
+    try {
+      const agents = readFileSync(join(dir, "AGENTS.md"), "utf8");
+      const m = agents.match(/^#{1,3}\s*Strictness:\s*`?(relaxed|standard|strict|certified)`?\s*$/m);
+      if (m) return m[1];
+    } catch {
+      /* no AGENTS.md here — climb */
+    }
+    if (existsSync(join(dir, ".git"))) break; // repository root
+    const parent = dirname(dir);
+    if (parent === dir) break; // filesystem root
+    dir = parent;
   }
   return "standard";
 }
