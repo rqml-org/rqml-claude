@@ -67,13 +67,15 @@ the `rqml` CLI, so what blocks the agent locally is exactly what blocks CI.
 
 ## First 10 minutes
 
-1. Install the RQML CLI (the hooks need it; without it the plugin fails open and
-   blocks nothing):
+1. Install the RQML CLI (the hooks need `rqml` on your PATH; without it the
+   plugin fails open and blocks nothing):
 
    ```bash
    npm install -g @rqml/cli
    rqml status
    ```
+
+   (One-off without a global install: `npx -y @rqml/cli status`.)
 
 2. Inside Claude Code, add this repository as a marketplace and install the
    plugin:

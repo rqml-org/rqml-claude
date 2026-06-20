@@ -13,10 +13,11 @@ npm install -g @rqml/cli
 rqml status
 ```
 
-Without a global install the plugin still works — its hooks fall back to
-`npx -y @rqml/cli` — but a global install keeps the loop fast. In an
-uninitialized repo, `status` may report that no spec exists. That is fine; the
-goal is to confirm the CLI can be invoked.
+The hooks need a resolvable `rqml` — a global install, a project-local
+`node_modules/.bin/rqml`, or the `RQML_CLAUDE_CLI` override. Without one they
+fail open and enforce nothing; a global install is the simplest and keeps the
+loop fast. In an uninitialized repo, `status` may report that no spec exists.
+That is fine; the goal is to confirm the CLI can be invoked.
 
 ## 2. Install the plugin
 
