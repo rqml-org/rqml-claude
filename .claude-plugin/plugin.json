@@ -1,6 +1,6 @@
 {
   "name": "rqml",
-  "description": "Spec-first development, enforced: deterministic RQML toolchain hooks (anchor, validate, gate), slash commands, and MCP tools for Claude Code.",
+  "description": "Make Claude code from requirements, not guesswork: anchor every session on the spec, trace code and tests back to requirements, and finish only when the deterministic rqml check gate passes.",
   "version": "0.1.0",
   "author": {
     "name": "Garðar Guðgeirsson",

@@ -4,12 +4,12 @@
     "name": "rqml.org",
     "email": "gardar@gmail.com"
   },
-  "description": "RQML spec-first tooling for Claude Code.",
+  "description": "Make Claude code from requirements, not guesswork — RQML spec-first tooling for Claude Code.",
   "plugins": [
     {
       "name": "rqml",
       "source": "./",
-      "description": "Spec-first development, enforced — RQML toolchain hooks, commands, and MCP tools.",
+      "description": "Anchor every Claude session on the spec, trace code and tests back to requirements, and gate completion on the deterministic rqml check.",
       "category": "development",
       "keywords": ["rqml", "requirements", "spec-first", "traceability"]
     }
