@@ -102,6 +102,12 @@ test("requirements.rqml carries the documentation requirements and trace links",
   for (const id of ["REQ-DOCS-CONVERSION", "REQ-DOCS-ONBOARDING", "REQ-DOCS-SURFACES"]) {
     assert.ok(spec.includes(`id="${id}"`), `requirements.rqml missing ${id}`);
   }
+  // A doc is traced when it appears as a compact trace endpoint value
+  // (from=/to=, RQML 2.2.0) or the legacy nested locator uri= (≤2.1.0). A
+  // schemeless slashless path (e.g. README.md) serializes with a "./" prefix
+  // in the compact form, so accept that too.
+  const tracesDoc = (uri) =>
+    spec.includes(`="${uri}"`) || spec.includes(`="./${uri}"`);
   for (const uri of [
     "README.md",
     "docs/quickstart.md",
@@ -110,7 +116,7 @@ test("requirements.rqml carries the documentation requirements and trace links",
     ".claude-plugin/plugin.json",
     ".claude-plugin/marketplace.json",
   ]) {
-    assert.ok(spec.includes(`uri="${uri}"`), `requirements.rqml missing trace link for ${uri}`);
+    assert.ok(tracesDoc(uri), `requirements.rqml missing trace link for ${uri}`);
   }
 });
 
