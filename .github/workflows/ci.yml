@@ -25,3 +25,17 @@ jobs:
           node-version: "20"
       - name: Run tests
         run: npm test
+
+      # Dogfood: this plugin exists to hold user projects to their spec, so it
+      # runs the same gate on itself — matching rqml-codex, which has done so
+      # since it was created. Without this the repo was the one place in the
+      # ecosystem not enforcing RQML on itself, and it showed: the craft-sync
+      # bot rewrites a baselined file without re-pinning, so its pull requests
+      # reported success while carrying drift the gate would have caught.
+      # rqml-codex additionally runs `--strictness strict`. That does not pass
+      # here yet: REQ-CLI-CONTRACT, REQ-NO-RESIDUE, REQ-PATH-DISCIPLINE, and
+      # REQ-SKILL-AUTHORING have no verification edge, so strict reports them as
+      # unverified. Adding the step before those are covered would only red the
+      # build. Cover them, then raise this to strict for full parity.
+      - name: RQML gate
+        run: npx -y @rqml/cli check
