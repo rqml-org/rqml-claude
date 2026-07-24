@@ -55,7 +55,7 @@ Fix the finding rather than bypassing it:
   appropriate;
 - dangling reference: fix or remove the broken trace.
 
-Then drive it green again:
+Then re-run the check:
 
 ```text
 /rqml:check

@@ -1,7 +1,7 @@
 # rqml-claude quickstart
 
-This walkthrough gets a repository from "plugin installed" to the first green
-RQML gate.
+This walkthrough gets a repository from "plugin installed" to its first
+passing `rqml check`.
 
 ## 1. Check prerequisites
 
@@ -59,7 +59,7 @@ Start a fresh session so `SessionStart` injects the spec, or run:
 /rqml:status
 ```
 
-The output reports coverage, drift, and whether the gate is currently green.
+The output reports trace coverage, drift, and whether `rqml check` currently exits 0.
 
 ## 5. Make one requirement-backed change
 
@@ -80,7 +80,7 @@ rqml link REQ-... path/to/implementation
 rqml link REQ-... path/to/test --type verifiedBy
 ```
 
-Then drive the gate to green:
+Then resolve any findings it reports:
 
 ```text
 /rqml:check
