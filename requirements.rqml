@@ -253,9 +253,12 @@
         <consequences>
           One source of truth for the craft; the vendored copy stays offline and
           in-context; updates arrive as sync pull requests; the guard catches
-          drift. The guard runs on pull requests (the sync PR validates itself;
-          main is not gated on the moving upstream craft), so an upstream change
-          never reds the plugin's main between the sync PR opening and merging.
+          drift. The guard alone is scoped to pull requests (the sync PR
+          validates itself; main is not gated on the moving upstream craft), so
+          an upstream change never reds the plugin's main between the sync PR
+          opening and merging. Scoping is per-check, not per-workflow: the rest
+          of CI — the test suite and the rqml check gate — runs on main pushes
+          too, so narrowing this one guard never costs main its backstop.
         </consequences>
       </decision>
     </decisions>
@@ -865,8 +868,8 @@
         <acceptance>
           <criterion id="CRIT-CRAFT-GUARD">
             <given>A vendored reference edited to differ from its canonical rqml-skill source</given>
-            <when>CI runs</when>
-            <then>The drift check fails and names the divergence; and when the canonical source is unreachable the check is skipped rather than failing spuriously.</then>
+            <when>CI runs on a pull request</when>
+            <then>The drift check fails and names the divergence; and it is skipped rather than failing spuriously when the canonical source is unreachable or when the run is a main push, whose comparison would be against upstream state no change here caused.</then>
           </criterion>
         </acceptance>
       </req>

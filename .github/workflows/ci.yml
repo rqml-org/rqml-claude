@@ -1,16 +1,28 @@
 name: CI
 
-# Runs the plugin test suite, including the craft drift guard
-# (test/craft-sync.test.mjs, REQ-CRAFT-GUARD), which fails if the vendored
-# authoring craft has drifted from the canonical rqml-skill source.
+# Runs the plugin test suite and the RQML gate on pull requests and on main, so
+# CI is the unconditional backstop the enforcement boundary claims it is: the
+# local hooks are best-effort (PreToolUse sees only Edit/Write/MultiEdit) and the
+# Stop gate fails open when the CLI is missing, so a merge that bypassed both is
+# caught here or nowhere.
 #
-# Triggered on pull_request only: the sync PR validates itself and contributor
-# PRs are checked, while main is never gated on the moving upstream craft — so a
-# craft change upstream cannot turn the plugin's main red before the sync PR
-# merges (REQ-CRAFT-GUARD / DEC-VENDOR-CRAFT).
+# One check is deliberately not main-gated: the craft drift guard
+# (test/craft-sync.test.mjs, REQ-CRAFT-GUARD) compares the vendored authoring
+# craft against rqml-skill's moving main. On a pull request that is exactly
+# right — the sync PR validates itself and contributor PRs are checked. On a
+# main push it would red the build for an upstream edit nobody here made, in the
+# window between the craft-sync PR opening and merging. So the guard alone is
+# scoped to pull requests via RQML_SKIP_CRAFT_DRIFT (DEC-VENDOR-CRAFT), while
+# everything else gates main. rqml-opencode scopes its craft-drift job the same
+# way, with `if: github.event_name == 'pull_request'`.
+#
+# The whole workflow used to be pull_request-only to achieve that scoping, which
+# also left `rqml check` — added later — never running on main at all.
 
 on:
   pull_request:
+  push:
+    branches: [main]
 
 permissions:
   contents: read
@@ -18,6 +30,9 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-latest
+    env:
+      # Empty on pull_request (guard runs), "1" on main pushes (guard skips).
+      RQML_SKIP_CRAFT_DRIFT: ${{ github.event_name == 'push' && '1' || '' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
