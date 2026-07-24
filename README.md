@@ -108,8 +108,8 @@ the `rqml` CLI, so what blocks the agent locally is exactly what blocks CI.
    rqml check
    ```
 
-See [docs/quickstart.md](docs/quickstart.md) for the full first-green-check
-walkthrough.
+See [docs/quickstart.md](docs/quickstart.md) for the full walkthrough to a
+first passing check.
 
 ## Daily workflow
 
@@ -136,7 +136,7 @@ For a typical change:
 | Surface | Contents |
 |---------|----------|
 | Hooks | SessionStart anchoring (`rqml status` into context) · PreToolUse approval gate that denies edits to code implementing a non-approved requirement · PostToolUse validation of every `.rqml` edit · Stop gate that blocks session completion until `rqml check` exits 0 |
-| Commands | `/rqml:init` (adopt RQML) · `/rqml:status` (re-anchor) · `/rqml:design` (record an ADR) · `/rqml:plan` (draft `.rqml/plan.md`) · `/rqml:review` (accept requirements before implementation) · `/rqml:check` (drive the gate to green) |
+| Commands | `/rqml:init` (adopt RQML) · `/rqml:status` (re-anchor) · `/rqml:design` (record an ADR) · `/rqml:plan` (draft `.rqml/plan.md`) · `/rqml:review` (accept requirements before implementation) · `/rqml:check` (resolve every finding until `rqml check` exits 0) |
 | MCP | The bundled `@rqml/mcp` server: `rqml_show`, `rqml_impact`, `rqml_link`, … |
 | Skill | RQML authoring guidance (structure, statement quality, traceability) + the monorepo spec-scope model |
 

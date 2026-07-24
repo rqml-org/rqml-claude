@@ -54,7 +54,7 @@ function brokenRelativeLinks(relative, contents) {
 }
 
 // ---------------------------------------------------------------------------
-// TC-DOCS-CONVERSION — README + docs explain RQML and onboard to first green.
+// TC-DOCS-CONVERSION — README + docs explain RQML and onboard to a first passing check.
 // ---------------------------------------------------------------------------
 test("TC-DOCS-CONVERSION: every required doc exists with no broken relative links", () => {
   for (const relative of REQUIRED_DOCS) {
