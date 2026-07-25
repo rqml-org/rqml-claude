@@ -28,8 +28,28 @@ permissions:
   contents: read
 
 jobs:
+  # Matrixed across the engines floor (18), the long-standing CI pin (20), and
+  # current (24). A single pin hid a real break: the test script was
+  # `node --test test/`, and passing a directory stopped being supported in Node
+  # 22, where positional arguments became glob patterns — `test/` resolved as a
+  # module specifier, so `npm test` failed with MODULE_NOT_FOUND and reported
+  # one bogus "test" instead of the suite. Pinned to 20, CI stayed green while
+  # every local run on a current Node was broken.
+  #
+  # The obvious fix is the wrong one: `node --test "test/**/*.mjs"` works on 22+
+  # and fails on 20, where globs are not understood, so swapping one for the
+  # other only moves the breakage into CI. Bare `node --test` spans the range,
+  # and only a matrix keeps it that way. The 18 leg is what makes the `engines`
+  # floor in package.json a tested claim rather than an assertion.
+  #
+  # fail-fast is off so a version-specific failure reports which versions are
+  # affected rather than cancelling its siblings.
   test:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ["18", "20", "24"]
     env:
       # Empty on pull_request (guard runs), "1" on main pushes (guard skips).
       RQML_SKIP_CRAFT_DRIFT: ${{ github.event_name == 'push' && '1' || '' }}
@@ -37,20 +57,32 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: ${{ matrix.node }}
       - name: Run tests
         run: npm test
 
-      # Dogfood: this plugin exists to hold user projects to their spec, so it
-      # runs the same gate on itself — matching rqml-codex, which has done so
-      # since it was created. Without this the repo was the one place in the
-      # ecosystem not enforcing RQML on itself, and it showed: the craft-sync
-      # bot rewrites a baselined file without re-pinning, so its pull requests
-      # reported success while carrying drift the gate would have caught.
-      # rqml-codex additionally runs `--strictness strict`. That does not pass
-      # here yet: REQ-CLI-CONTRACT, REQ-NO-RESIDUE, REQ-PATH-DISCIPLINE, and
-      # REQ-SKILL-AUTHORING have no verification edge, so strict reports them as
-      # unverified. Adding the step before those are covered would only red the
-      # build. Cover them, then raise this to strict for full parity.
+  # Its own job, on one Node, rather than a step in the matrix: the gate reads
+  # the spec and the working tree, so its verdict cannot vary by Node version,
+  # and running it per leg would fetch @rqml/cli three times to prove the same
+  # thing. It still runs on both triggers, so it gates main exactly as before.
+  #
+  # Dogfood: this plugin exists to hold user projects to their spec, so it
+  # runs the same gate on itself — matching rqml-codex, which has done so
+  # since it was created. Without this the repo was the one place in the
+  # ecosystem not enforcing RQML on itself, and it showed: the craft-sync
+  # bot rewrites a baselined file without re-pinning, so its pull requests
+  # reported success while carrying drift the gate would have caught.
+  # rqml-codex additionally runs `--strictness strict`. That does not pass
+  # here yet: REQ-CLI-CONTRACT, REQ-NO-RESIDUE, REQ-PATH-DISCIPLINE, and
+  # REQ-SKILL-AUTHORING have no verification edge, so strict reports them as
+  # unverified. Adding the step before those are covered would only red the
+  # build. Cover them, then raise this to strict for full parity.
+  rqml-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
       - name: RQML gate
         run: npx -y @rqml/cli check
