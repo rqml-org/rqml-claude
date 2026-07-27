@@ -162,14 +162,95 @@ const INSTALL_HINT =
  * the warning text the first time, null afterwards.
  */
 export function warnOnce(sessionId) {
-  const marker = join(tmpdir(), `rqml-claude-warned-${sessionId || "nosession"}`);
-  if (existsSync(marker)) return null;
+  return markOnce(`warned-${sessionId || "nosession"}`) ? INSTALL_HINT : null;
+}
+
+/**
+ * Claim a once-per-session marker. Returns true the first time `key` is seen,
+ * false afterwards. An unwritable tmpdir claims every time — repeating a warning
+ * is better than swallowing it.
+ */
+function markOnce(key) {
+  const marker = join(tmpdir(), `rqml-claude-${key}`);
+  if (existsSync(marker)) return false;
   try {
     writeFileSync(marker, "1");
   } catch {
     /* unwritable tmpdir: warn every time rather than never */
   }
-  return INSTALL_HINT;
+  return true;
+}
+
+/**
+ * The minimum @rqml/cli version this plugin honours (REQ-CLI-FLOOR).
+ *
+ * The baseline is the ecosystem floor, declared once upstream and vendored here
+ * as toolchain-floor.json so this check needs no network. The plugin may raise
+ * it in package.json's rqmlToolchain.floor when it genuinely needs a newer
+ * capability, never lower it — a declared floor below the ecosystem value is
+ * ignored here and failed in CI (CRIT-FLOOR-OVERRIDE).
+ *
+ * Returns null when the vendored declaration is missing or unreadable: no floor
+ * means no warning, never a spurious one.
+ */
+export function readFloor(pluginRoot) {
+  const ecosystem = readJson(join(pluginRoot, "toolchain-floor.json"))?.cliFloor;
+  if (typeof ecosystem !== "string" || parseVersion(ecosystem) === null) return null;
+  const declared = readJson(join(pluginRoot, "package.json"))?.rqmlToolchain?.floor;
+  if (typeof declared !== "string" || parseVersion(declared) === null) return ecosystem;
+  return compareVersions(declared, ecosystem) > 0 ? declared : ecosystem;
+}
+
+function readJson(path) {
+  try {
+    return JSON.parse(readFileSync(path, "utf8"));
+  } catch {
+    return null;
+  }
+}
+
+/** The installed CLI's version (REQ-CLI-VERSION), or null when it cannot be read. */
+export function readCliVersion(cli, cwd) {
+  const res = runCli(cli, ["--version"], cwd);
+  if (res.status !== 0) return null;
+  const m = res.stdout.match(/\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?/);
+  return m === null ? null : m[0];
+}
+
+/** Parse a semantic version into [major, minor, patch], ignoring any pre-release tag. */
+function parseVersion(v) {
+  const m = /^(\d+)\.(\d+)\.(\d+)/.exec(v.trim());
+  return m === null ? null : [Number(m[1]), Number(m[2]), Number(m[3])];
+}
+
+/** Compare two semantic versions; <0, 0 or >0. Unparseable sorts as equal. */
+export function compareVersions(a, b) {
+  const [x, y] = [parseVersion(a), parseVersion(b)];
+  if (x === null || y === null) return 0;
+  for (let i = 0; i < 3; i++) {
+    if (x[i] !== y[i]) return x[i] - y[i];
+  }
+  return 0;
+}
+
+/**
+ * One-per-session warning when the installed CLI is below the honoured floor
+ * (REQ-CLI-FLOOR). Returns the warning text, or null when the toolchain is fine,
+ * its version is unreadable, no floor is declared, or this session already
+ * warned. Never blocks — a version mismatch is a diagnosis, not a verdict.
+ */
+export function floorWarning(cli, cwd, pluginRoot, sessionId) {
+  const floor = readFloor(pluginRoot);
+  if (floor === null) return null;
+  const installed = readCliVersion(cli, cwd);
+  if (installed === null) return null; // CLI too old to report a version, or unreadable
+  if (compareVersions(installed, floor) >= 0) return null;
+  if (!markOnce(`floor-${sessionId || "nosession"}`)) return null;
+  return (
+    `rqml ${installed} is below the ${floor} this plugin needs. ` +
+    "Upgrade with: npm install -g @rqml/cli " +
+    "(nothing is blocked; the gate keeps running with what it has)."
+  );
 }
 
 /** Cap diagnostics so a pathological report cannot flood the context. */

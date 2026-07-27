@@ -9,10 +9,22 @@
  *
  * Stdout from a SessionStart hook is added to the agent's context.
  */
-import { discoverWorkspace, findSpec, readPayload, readStrictness, resolveCli, runCli, warnOnce } from "./lib.mjs";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import {
+  discoverWorkspace,
+  findSpec,
+  floorWarning,
+  readPayload,
+  readStrictness,
+  resolveCli,
+  runCli,
+  warnOnce,
+} from "./lib.mjs";
 
 const payload = readPayload();
 const cwd = payload.cwd ?? process.cwd();
+const PLUGIN_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
 
 const spec = findSpec(cwd);
 const cli = resolveCli(cwd);
@@ -25,6 +37,7 @@ if (spec === null) {
   if (cli === null) process.exit(0);
   const ws = discoverWorkspace(cli, cwd, strictness);
   if (ws === null || ws.units.length === 0) process.exit(0); // genuinely dormant
+  emitFloorNote();
   process.stdout.write(workspaceAnchor(ws, strictness));
   process.exit(0);
 }
@@ -34,6 +47,11 @@ if (cli === null) {
   if (warning !== null) process.stdout.write(`[rqml] ${warning}\n`);
   process.exit(0);
 }
+
+// The toolchain is present and this directory is governed: diagnose an
+// under-floor CLI before anything that depends on it (REQ-CLI-FLOOR). One extra
+// spawn, at session start only — never on the per-turn path.
+emitFloorNote();
 
 const status = runCli(cli, ["status"], cwd);
 if (status.status !== 0) process.exit(0); // unreadable spec: validation hook will surface it
@@ -48,6 +66,16 @@ process.stdout.write(
     "**Verify** (finish only when `rqml check` exits 0 — the stop gate enforces this). " +
     "MCP tools (rqml_show, rqml_impact, rqml_link, …) are available; prefer their `path` inputs over inlining documents.\n",
 );
+
+/**
+ * Surface an under-floor toolchain once per session (REQ-CLI-FLOOR). Silent when
+ * the CLI meets the floor, when its version cannot be read, and always in an
+ * ungoverned directory — this is only reached once a spec or workspace is found.
+ */
+function emitFloorNote() {
+  const note = floorWarning(cli, cwd, PLUGIN_ROOT, payload.session_id);
+  if (note !== null) process.stdout.write(`[rqml] ${note}\n\n`);
+}
 
 /** Anchor text for a workspace root: the discovered units and how to gate them. */
 function workspaceAnchor(ws, level) {
